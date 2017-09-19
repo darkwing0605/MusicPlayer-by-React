@@ -13,10 +13,9 @@ module.exports = {
 			{
 				test: /\.(js|jsx)$/,
 				loader: 'babel-loader',
-				exclude: path.resolve(__dirname, './node_modules'),
 				include: path.resolve(__dirname, './src'),
 				query: {
-					presets: ['env', 'react']
+					presets: ['react', 'env']
 				}
 			},
 			{
@@ -38,14 +37,21 @@ module.exports = {
 			},
 			{
 				test: /\.json$/,
-				use: [
-					'json-loader'
-				]
+				use: 'json-loader'
+			},
+			{
+				test: /\.(png|jpg|gif)$/,
+				use: 'url-loader?limit=8192&name=images/[name]-[hash:5].[ext]'
+			},
+			{
+				test: /\.mp3$/,
+				use: 'url-loader?limit=8192&name=audio/[name]-[hash:5].[ext]'
 			}
 		]
 	},
 	plugins: [
 		new htmlWebpackPlugin({
+			title: 'MusicPlayer by React',
 			filename: 'index.html',
 			template: './src/index.html',
 			inject: 'body'
