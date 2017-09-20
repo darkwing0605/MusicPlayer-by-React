@@ -1,4 +1,4 @@
-import '../css/header.less';
+import '../css/common.less';
 
 var logo = require('../images/logo.png');
 
@@ -13,50 +13,54 @@ audioData = (function getAudioURL(audioDataArr) {
 	return audioDataArr;
 })(audioData);
 
+// 音乐总时间
+let duration = null;
+
 let Main = React.createClass({
-	getInitialState: function(index) {
-		var index = 0;
+	getInitialState: function() {
 		return {
-				audioNum: audioData.length,
-				index: 0,
 				progress: '-',
-				audioURL: audioData[index].audioURL,
-				title: '布谷鸟',
-				singer: '不知道'
 		};
 	},
-	updatePlayStatus: function() {
-		let audio = document.getElementById('audio');
-		if (this.state.playStatus) {
-			audio.play();
-		} else {
-			audio.pause();
-		}
-	},
-	play: function() {
-		this.setState({playStatus: !this.state.playStatus}, () => {
-			this.updatePlayStatus();
+	componentDidMount: function() {
+		$('#player').jPlayer({
+			ready: function() {
+				$('#player').jPlayer('setMedia', {
+					mp3: audioData[0].audioURL
+				}).jPlayer('play');
+			},
+			supplied: 'mp3',
+			wmode: 'window'
 		});
+		$('#player').bind($.jPlayer.event.timeupdate, (e) => {
+			duration = e.jPlayer.status.duration;
+			this.setState({
+				progress: e.jPlayer.status.currentPercentAbsolute
+			});
+		});
+	},
+	componentWillUnmount: function() {
+		$('#player').unbind($.jPlayer.event.timeupdate);
+	},
+	progressChangeHandler: function(progress) {
+		$('#player').jPlayer('play', duration * progress);
 	},
 	render: function() {
 		return (
 			<div>
 				<Header />
-				<Controls isPlay={this.state.playStatus} onPlay={this.play} />
-				<audio controls="controls" autoplay="autoplay" id="audio">
-				 	<source src={this.state.audioURL} type="audio/mp3" />
-				 	您的浏览器不支持 audio 标签。
-				 </audio>
-				 {this.state.audioNum}
+				<div id="player"></div>
+				<Progress progress={this.state.progress} onProgressChange={this.progressChangeHandler} barColor="#ff0000"/>
 			</div>
 		);
 	}
 });
+debugger
 
 let Header = React.createClass({
 	render: function() {
 		return (
-			<div className="header row">
+			<div className="header">
 				<img src={logo} alt="" className="logo" />
 				<h1 className="caption">MusicPlayer by React</h1>
 			</div>
@@ -64,38 +68,23 @@ let Header = React.createClass({
 	}
 });
 
-// let Info = React.createClass({
-// 	render: function() {
-// 		return (
-// 			<div>
-// 				{audioData.title}
-// 			</div>
-// 		);
-// 	}
-// });
-// console.log(this.state);
-// debugger;
-
-// let Progress = React.createClass({
-// 	render: function() {
-// 		return (
-// 			<div className="progress">
-// 				{this.state.progress}s
-// 			</div>
-// 		);
-// 	}
-// })
-
-let Controls = React.createClass({
-	render: function() {
-		if (this.props.isPlay == true) {
-			className = 'pause';
-		} else {
-			className = 'play';
+let Progress = React.createClass({
+	getDefaultProps() {
+		return {
+			barColor: '#2f9842'
 		}
+	},
+
+	changeProgress: function(e) {
+		let progressBar = this.refs.progressBar;
+		let progress = (e.clientX - progressBar.getBoundingClientRect().left) / progressBar.clientWidth;
+		this.props.onProgressChange && this.props.onProgressChange(progress);
+	},
+
+	render: function() {
 		return (
-			<div className="controls">
-				<div className="play" onclick={this.props.onplay}>
+			<div className="progress" ref="progressBar" onClick={this.changeProgress}>
+				<div className="progressHover" style={{width: `${this.props.progress}%`, background: this.props.barColor}}></div>
 			</div>
 		);
 	}
