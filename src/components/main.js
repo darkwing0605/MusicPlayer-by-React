@@ -1,5 +1,7 @@
+import React from 'react';
 import '../css/common.less';
 import '../css/style.less';
+import { Router, IndexRoute, Link, Route, hashHistory } from 'react-router-dom';
 
 var logo = require('../images/logo.png');
 
@@ -20,7 +22,8 @@ let Music = audioData[MusicID];
 // 音乐总时间
 let duration = null;
 
-let Main = React.createClass({
+
+let App = React.createClass({
 	getInitialState: function() {
 		return {
 			musicList: audioData,
@@ -45,9 +48,23 @@ let Main = React.createClass({
 				<Header />
 				<div id="player"></div>
 				<Player Music={this.state.Music}></Player>
-				<MusicList Music={this.state.Music} musicList={this.state.musicList}></MusicList>
+				{React.cloneElement(this.props.children, this.state)}
 			</div>
 		);
+	}
+
+});
+
+let Main = React.createClass({
+	render: function() {
+		return (
+			<Router history={hashHistory}>
+				<Route path="/" component={App}>
+					<IndexRoute component={Player}></IndexRoute>
+					<Route path="/list" component={MusicList}></Route>
+				</Route>
+			</Router>
+		)
 	}
 });
 
