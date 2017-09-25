@@ -1,7 +1,9 @@
 import React from 'react';
 import '../css/common.less';
 import '../css/style.less';
-import { Router, IndexRoute, Link, Route, hashHistory } from 'react-router-dom';
+// import { Router, IndexRoute, Link, Route, browserHistory } from 'react-router';
+import {BrowserRouter as Router, Route, Link} from 'react-router-dom';
+import {IndexRoute} from 'react-router';
 
 var logo = require('../images/logo.png');
 
@@ -54,13 +56,12 @@ let App = React.createClass({
 	}
 
 });
-
 let Main = React.createClass({
 	render: function() {
 		return (
-			<Router history={hashHistory}>
+			<Router>
 				<Route path="/" component={App}>
-					<IndexRoute component={Player}></IndexRoute>
+					<IndexRoute exact component={Player}></IndexRoute>
 					<Route path="/list" component={MusicList}></Route>
 				</Route>
 			</Router>
