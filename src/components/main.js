@@ -1,9 +1,8 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import '../css/common.less';
 import '../css/style.less';
-// import { Router, IndexRoute, Link, Route, browserHistory } from 'react-router';
-import {BrowserRouter as Router, Route, Link} from 'react-router-dom';
-import {IndexRoute} from 'react-router';
+import { Router, withRouter, IndexRoute, Link, Route, hashHistory } from 'react-router';
 
 var logo = require('../images/logo.png');
 
@@ -18,7 +17,7 @@ audioData = (function getAudioURL(audioDataArr) {
 	}
 	return audioDataArr;
 })(audioData);
-let MusicID = 1;
+let MusicID = 0;
 let Music = audioData[MusicID];
 
 // 音乐总时间
@@ -49,8 +48,7 @@ let App = React.createClass({
 			<div>
 				<Header />
 				<div id="player"></div>
-				<Player Music={this.state.Music}></Player>
-				{React.cloneElement(this.props.children, this.state)}
+				{ React.cloneElement(this.props.children, this.state) }
 			</div>
 		);
 	}
@@ -59,13 +57,13 @@ let App = React.createClass({
 let Main = React.createClass({
 	render: function() {
 		return (
-			<Router>
+			<Router history={hashHistory}>
 				<Route path="/" component={App}>
-					<IndexRoute exact component={Player}></IndexRoute>
+					<IndexRoute component={Player}></IndexRoute>
 					<Route path="/list" component={MusicList}></Route>
 				</Route>
 			</Router>
-		)
+		);
 	}
 });
 
@@ -154,7 +152,7 @@ let Player = React.createClass({
 	render: function() {
 		return (
 			<div className="player">
-				<h1 className="caption">我的私人音乐坊 &gt;</h1>
+				<h1 className="caption"><Link to="/list">我的私人音乐坊 &gt;</Link></h1>
 				<div className="mt20 row">
 					<div className="controll-wrapper">
 						<h2 className="music-title">{this.props.Music.title}</h2>
@@ -173,9 +171,9 @@ let Player = React.createClass({
 						</div>
 						<div className="mt35 row">
 							<div>
-								<i className="icon prev" onclick={this.prev}></i>
+								<i className="icon prev" onClick={this.prev}></i>
 								<i className={`icon ml20 ${this.state.isPlay ? 'pause' : 'play'}`} onClick={this.play}></i>
-								<i className="icon next ml20" onclick={this.next}></i>
+								<i className="icon next ml20" onClick={this.next}></i>
 							</div>
 							<div className="-col-auto">
 								<i className="icon repeat-cycle"></i>
