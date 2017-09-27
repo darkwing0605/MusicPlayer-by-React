@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import '../css/common.less';
 import '../css/style.less';
 import { Router, withRouter, IndexRoute, Link, Route, hashHistory } from 'react-router';
+import Pubsub from 'pubsub-js';
 
 var logo = require('../images/logo.png');
 
@@ -31,18 +32,44 @@ let App = React.createClass({
 			Music: audioData[MusicID]
 		};
 	},
+	playMusic: function(musicItem) {
+		console.log(musicItem)
+		$('#player').jPlayer('setMedia', {
+			mp3: musicItem.title
+		}).jPlayer('play');
+
+		this.setState({
+			Music: musicItem
+		});
+	},
 	componentDidMount: function() {
 		$('#player').jPlayer({
-			ready: function() {
-				$('#player').jPlayer('setMedia', {
-					mp3: Music.audioURL
-				}).jPlayer('play');
-			},
+			// ready: function() {
+			// 	$('#player').jPlayer('setMedia', {
+			// 		mp3: Music.audioURL
+			// 	}).jPlayer('play');
+			// },
 			supplied: 'mp3',
 			wmode: 'window'
 		});
+
+		this.playMusic(this.state.currentMusicItem);
+
+		Pubsub.subscribe('DELETE_MUSIC', (msg, musicItem) => {
+			this.setState({
+				musicList: this.state.musicList.filter(item => {
+					return item !== musicItem;
+				})
+			});
+		});
+		Pubsub.subscribe('PLAY_MUSIC', (msg, musicItem) => {
+			//
+		})
 	},
-	componentWillUnmount: function() {},
+	componentWillUnmount: function() {
+		Pubsub.unsubscribe('PLAY_MUSIC');
+		Pubsub.unsubscribe('DELETE_MUSIC');
+	},
 	render: function() {
 		return (
 			<div>
@@ -205,11 +232,25 @@ let MusicList = React.createClass({
 });
 
 let MusicListItem = React.createClass({
+	playMusic: function(musicItem, e) {
+		Pubsub.publish('PLAY_MUSIC', musicItem);
+
+		e.stopPropagation();
+		e.preventDefault();
+	},
+	deleteMusic: function(musicItem, e) {
+		Pubsub.publish('DELETE_MUSIC', musicItem);
+
+		e.stopPropagation();
+		e.preventDefault();
+	},
+
 	render: function() {
+		let musicItem = this.props.musicItem;
 		return (
-			<li className={`musicListItem row ${this.props.focus ? ' focus' : ''}`}>
+			<li onClick={this.playMusic.bind(this, musicItem)} className={`musicListItem row ${this.props.focus ? ' focus' : ''}`}>
 				<p><strong>{this.props.musicItem.title}</strong> - {this.props.musicItem.singer}</p>
-				<p className="-col-auto delete"></p>
+				<p onClick={this.deleteMusic.bind(this, musicItem)} className="-col-auto delete"></p>
 			</li>
 		);
 	}
