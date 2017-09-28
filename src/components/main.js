@@ -18,7 +18,7 @@ audioData = (function getAudioURL(audioDataArr) {
 	}
 	return audioDataArr;
 })(audioData);
-let MusicID = 0;
+var MusicID = 0;
 let Music = audioData[MusicID];
 
 // 音乐总时间
@@ -29,46 +29,97 @@ let App = React.createClass({
 	getInitialState: function() {
 		return {
 			musicList: audioData,
-			Music: audioData[MusicID]
+			Music: audioData[MusicID],
+			repeatType: 'cycle'
 		};
 	},
-	playMusic: function(musicItem) {
-		console.log(musicItem)
+
+	playMusic: function(Music) {
 		$('#player').jPlayer('setMedia', {
-			mp3: musicItem.title
+			mp3: Music.audioURL
 		}).jPlayer('play');
 
 		this.setState({
-			Music: musicItem
+			Music: Music
 		});
 	},
+	playNext: function(type = 'next') {
+		let musicListLength = this.state.musicList.length;
+		let index = this.findMusicIndex(this.state.Music)
+		if (type === 'next') {
+			MusicID = (MusicID + 1) % musicListLength;
+		} else {
+			MusicID = (MusicID - 1 + musicListLength) % musicListLength;
+		}
+
+		this.playMusic(this.state.musicList[MusicID]);
+	},
+	playRepeat: function() {
+		if (this.state.repeatType === 'random') {
+			let index = this.findMusicIndex(this.state.Music);
+			let randomIndex = this.randomRange(0, this.state.musicList.length - 1);
+			while(randomIndex === index) {
+				randomIndex = this.randomRange(0, this.state.musicList.length - 1);
+			}
+			this.playMusic(this.state.musicList[randomIndex]);
+		} else if (this.state.repeatType === 'once') {
+			this.playMusic(this.state.Music);
+		} else {
+			this.playNext();
+		}
+	},
+	findMusicIndex: function() {
+		let index = this.state.musicList.indexOf(MusicID);
+		return Math.max(0, index);
+	},
+	randomRange: function(under, over) {
+		return (Math.ceil(Math.random() * (over - under) + under));
+	},
+
 	componentDidMount: function() {
 		$('#player').jPlayer({
-			// ready: function() {
-			// 	$('#player').jPlayer('setMedia', {
-			// 		mp3: Music.audioURL
-			// 	}).jPlayer('play');
-			// },
 			supplied: 'mp3',
 			wmode: 'window'
 		});
 
-		this.playMusic(this.state.currentMusicItem);
+		this.playMusic(this.state.Music);
 
-		Pubsub.subscribe('DELETE_MUSIC', (msg, musicItem) => {
+		$('#player').bind($.jPlayer.event.ended, (e) => {
+			this.playRepeat();
+		})
+
+		Pubsub.subscribe('DELETE_MUSIC', (msg, Music) => {
 			this.setState({
 				musicList: this.state.musicList.filter(item => {
-					return item !== musicItem;
+					return item !== Music;
 				})
 			});
 		});
-		Pubsub.subscribe('PLAY_MUSIC', (msg, musicItem) => {
-			//
+		Pubsub.subscribe('PLAY_MUSIC', (msg, Music) => {
+			this.playMusic(Music);
+		});
+		Pubsub.subscribe('PLAY_PREV', (msg, Music) => {
+			this.playNext('prev');
+		});
+		Pubsub.subscribe('PLAY_NEXT', (msg, Music) => {
+			this.playNext();
+		});
+		let repeatList = ['cycle', 'once', 'random'];
+		Pubsub.subscribe('CHANGE_REPEAT', () => {
+			let index = repeatList.indexOf(this.state.repeatType);
+			index = (index + 1) % repeatList.length;
+			this.setState({
+				repeatType: repeatList[index]
+			});
 		})
 	},
 	componentWillUnmount: function() {
 		Pubsub.unsubscribe('PLAY_MUSIC');
 		Pubsub.unsubscribe('DELETE_MUSIC');
+		Pubsub.unsubscribe('PLAY_PREV');
+		Pubsub.unsubscribe('PLAY_NEXT');
+		Pubsub.unsubscribe('CHANGE_REPEAT');
+		$('#player').unbind($.jPlayer.event.ended);
 	},
 	render: function() {
 		return (
@@ -135,8 +186,28 @@ let Player = React.createClass({
 		return {
 				progress: 0,
 				volume: 0,
-				isPlay: true
+				isPlay: true,
+				leftTime: ''
 		};
+	},
+
+	playPrev: function() {
+		Pubsub.publish('PLAY_PREV');
+	},
+	playNext: function() {
+		Pubsub.publish('PLAY_NEXT');
+	},
+	changeRepeat: function() {
+		Pubsub.publish('CHANGE_REPEAT');
+	},
+
+	formatTime: function(time) {
+		time = Math.floor(time);
+		let minutes = Math.floor(time / 60);
+		let seconds = Math.floor(time % 60);
+
+		seconds = seconds < 10 ? `0${seconds}` : seconds;
+		return `${minutes}:${seconds}`;
 	},
 
 	componentDidMount: function() {
@@ -144,7 +215,8 @@ let Player = React.createClass({
 			duration = e.jPlayer.status.duration;
 			this.setState({
 				volume: e.jPlayer.options.volume * 100,
-				progress: e.jPlayer.status.currentPercentAbsolute
+				progress: e.jPlayer.status.currentPercentAbsolute,
+				leftTime: this.formatTime(duration * (1 - e.jPlayer.status.currentPercentAbsolute / 100))
 			});
 		});
 	},
@@ -185,7 +257,7 @@ let Player = React.createClass({
 						<h2 className="music-title">{this.props.Music.title}</h2>
 						<h3 className="music-artist mt10">{this.props.Music.singer}</h3>
 						<div className="row mt20">
-							<div className="left-time -col-auto">-2:00</div>
+							<div className="left-time -col-auto">-{this.state.leftTime}</div>
 							<div className="volume-container">
 								<i className="icon-volume rt" style={{top: 5, left: -5}}></i>
 								<div className="volume-wrapper">
@@ -198,12 +270,12 @@ let Player = React.createClass({
 						</div>
 						<div className="mt35 row">
 							<div>
-								<i className="icon prev" onClick={this.prev}></i>
+								<i className="icon prev" onClick={this.playPrev}></i>
 								<i className={`icon ml20 ${this.state.isPlay ? 'pause' : 'play'}`} onClick={this.play}></i>
-								<i className="icon next ml20" onClick={this.next}></i>
+								<i className="icon next ml20" onClick={this.playNext}></i>
 							</div>
 							<div className="-col-auto">
-								<i className="icon repeat-cycle"></i>
+								<i className={`icon repeat-${this.props.repeatType}`} onClick={this.changeRepeat}></i>
 							</div>
 						</div>
 					</div>
@@ -222,7 +294,7 @@ let MusicList = React.createClass({
 		let listEle = null;
 		listEle = this.props.musicList.map((item) => {
 			return (
-				<MusicListItem focus={item === this.props.Music} key={item.id} musicItem={item}>{item.title}</MusicListItem>
+				<MusicListItem focus={item === this.props.Music} key={item.id} Music={item}>{item.title}</MusicListItem>
 			);
 		});
 		return (
@@ -232,25 +304,25 @@ let MusicList = React.createClass({
 });
 
 let MusicListItem = React.createClass({
-	playMusic: function(musicItem, e) {
-		Pubsub.publish('PLAY_MUSIC', musicItem);
+	playMusic: function(Music, e) {
+		Pubsub.publish('PLAY_MUSIC', Music);
 
 		e.stopPropagation();
 		e.preventDefault();
 	},
-	deleteMusic: function(musicItem, e) {
-		Pubsub.publish('DELETE_MUSIC', musicItem);
+	deleteMusic: function(Music, e) {
+		Pubsub.publish('DELETE_MUSIC', Music);
 
 		e.stopPropagation();
 		e.preventDefault();
 	},
 
 	render: function() {
-		let musicItem = this.props.musicItem;
+		let Music = this.props.Music;
 		return (
-			<li onClick={this.playMusic.bind(this, musicItem)} className={`musicListItem row ${this.props.focus ? ' focus' : ''}`}>
-				<p><strong>{this.props.musicItem.title}</strong> - {this.props.musicItem.singer}</p>
-				<p onClick={this.deleteMusic.bind(this, musicItem)} className="-col-auto delete"></p>
+			<li onClick={this.playMusic.bind(this, Music)} className={`musicListItem row ${this.props.focus ? ' focus' : ''}`}>
+				<p><strong>{this.props.Music.title}</strong> - {this.props.Music.singer}</p>
+				<p onClick={this.deleteMusic.bind(this, Music)} className="-col-auto delete"></p>
 			</li>
 		);
 	}

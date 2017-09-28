@@ -3,12 +3,72 @@
 		"id": 1,
 		"filename": "布谷鸟.mp3",
 		"title": "布谷鸟",
-		"singer": "不知道"
+		"singer": "1022女声"
 	},
 	{
 		"id": 2,
 		"filename": "那些年的青春回忆.mp3",
 		"title": "那些年的青春回忆",
-		"singer": "不知道+1"
+		"singer": "1983组合"
+	},
+	{
+		"id": 3,
+		"filename": "暖暖.mp3",
+		"title": "暖暖",
+		"singer": "依桐"
+	},
+	{
+		"id": 4,
+		"filename": "爱的供养.mp3",
+		"title": "爱的供养",
+		"singer": "杨幂"
+	},
+	{
+		"id": 5,
+		"filename": "当那一天来临.mp3",
+		"title": "当那一天来临",
+		"singer": "总政合唱团"
+	},
+	{
+		"id": 6,
+		"filename": "Schnappi.mp3",
+		"title": "Schnappi",
+		"singer": "Schnappi"
+	},
+	{
+		"id": 7,
+		"filename": "Try Everything.mp3",
+		"title": "Try Everything",
+		"singer": "Shakira"
+	},
+	{
+		"id": 8,
+		"filename": "卡农 (小提琴版).mp3",
+		"title": "卡农 (小提琴版)",
+		"singer": "Various Artists"
+	},
+	{
+		"id": 9,
+		"filename": "Secret of my heart.mp3",
+		"title": "Secret of my heart",
+		"singer": "倉木麻衣 (くらき まい)"
+	},
+	{
+		"id": 10,
+		"filename": "喀秋莎.mp3",
+		"title": "喀秋莎",
+		"singer": "俄罗斯合唱团"
+	},
+	{
+		"id": 11,
+		"filename": "月光の雲海.mp3",
+		"title": "月光の雲海",
+		"singer": "久石譲"
+	},
+	{
+		"id": 12,
+		"filename": "甩葱歌.mp3",
+		"title": "甩葱歌",
+		"singer": "初音未来"
 	}
 ]
